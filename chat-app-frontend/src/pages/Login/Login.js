@@ -9,7 +9,7 @@ const Login = () => {
         // Perform login logic here (e.g., API call to backend)
         console.log('Form submitted!', { email, password });
     };
-
+    
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="w-full max-w-sm bg-white shadow-lg rounded-lg p-8">
