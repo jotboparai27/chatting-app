@@ -1,15 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            navigate('/chat');
+        }
+    }, [navigate]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Perform login logic here (e.g., API call to backend)
-        console.log('Form submitted!', { email, password });
+        try {
+            const response = await axios.post('http://localhost:5001/api/auth/login', {
+                email,
+                password,
+            });
+            const { token } = response.data;
+            localStorage.setItem('authToken', token);
+            navigate('/chat');
+        } catch (error) {
+            alert('Invalid email or password!');
+        }
     };
-    
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="w-full max-w-sm bg-white shadow-lg rounded-lg p-8">
