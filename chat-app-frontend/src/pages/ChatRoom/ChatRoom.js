@@ -1,63 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const ChatRoom = () => {
-    const [messages, setMessages] = useState([]); // State to store messages
-    const [inputMessage, setInputMessage] = useState(''); // State for the input field
+    const [connectedUsers, setConnectedUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
 
-    // Function to handle sending messages
+    // Fetch connected users
+    useEffect(() => {
+        const fetchConnectedUsers = async () => {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await axios.get(
+                    'http://localhost:5001/api/connections/connected-users',
+                    { headers: { Authorization: `${token}` } }
+                );
+                setConnectedUsers(response.data);
+            } catch (error) {
+                console.error('Error fetching connected users:', error);
+            }
+        };
+
+        fetchConnectedUsers();
+    }, []);
+
+    // Handle selecting a user
+    const handleSelectUser = (user) => {
+        setSelectedUser(user);
+        setMessages([]); // Clear messages when switching chats
+    };
+
+    // Handle sending a message
     const handleSendMessage = () => {
-        if (inputMessage.trim() !== '') {
-            const newMessage = {
-                id: messages.length + 1,
-                text: inputMessage,
-                sender: 'You', // Hardcoded sender for now
-            };
-            setMessages([...messages, newMessage]); // Add new message to the messages array
-            setInputMessage(''); // Clear the input field
+        if (message.trim()) {
+            setMessages([...messages, { sender: 'You', text: message }]);
+            setMessage(''); // Clear the input
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-            <div className="w-full max-w-lg bg-white rounded-lg shadow-lg">
-                {/* Chat Header */}
-                <div className="bg-blue-600 text-white text-lg font-bold p-4 rounded-t-lg">
-                    ChatRoom
-                </div>
-
-                {/* Chat Messages */}
-                <div className="p-4 h-96 overflow-y-auto">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`p-2 my-2 ${
-                                message.sender === 'You'
-                                    ? 'bg-blue-100 text-blue-900 self-end'
-                                    : 'bg-gray-200 text-gray-900'
-                            } rounded-md`}
+        <div className="min-h-screen flex">
+            {/* User List */}
+            <div className="w-1/3 bg-gray-100 p-4">
+                <h2 className="text-lg font-bold mb-4">Connected Users</h2>
+                <ul>
+                    {connectedUsers.map((user) => (
+                        <li
+                            key={user._id}
+                            className={`p-2 cursor-pointer rounded ${
+                                selectedUser?._id === user._id
+                                    ? 'bg-blue-500 text-white'
+                                    : 'hover:bg-gray-200'
+                            }`}
+                            onClick={() => handleSelectUser(user)}
                         >
-                            <strong>{message.sender}: </strong>
-                            {message.text}
-                        </div>
+                            {user.email}
+                        </li>
                     ))}
-                </div>
+                </ul>
+            </div>
 
-                {/* Input Box */}
-                <div className="flex items-center p-4 border-t">
-                    <input
-                        type="text"
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        className="flex-grow px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="Type your message..."
-                    />
-                    <button
-                        onClick={handleSendMessage}
-                        className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                        Send
-                    </button>
-                </div>
+            {/* Chat Area */}
+            <div className="w-2/3 p-4 flex flex-col">
+                {selectedUser ? (
+                    <>
+                        <h2 className="text-lg font-bold mb-4">
+                            Chatting with {selectedUser.email}
+                        </h2>
+                        <div className="flex-grow border p-4 mb-4 overflow-y-auto">
+                            {messages.map((msg, index) => (
+                                <div
+                                    key={index}
+                                    className={`mb-2 ${
+                                        msg.sender === 'You'
+                                            ? 'text-right'
+                                            : 'text-left'
+                                    }`}
+                                >
+                                    <span
+                                        className={`p-2 rounded inline-block ${
+                                            msg.sender === 'You'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200'
+                                        }`}
+                                    >
+                                        {msg.text}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex">
+                            <input
+                                type="text"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                className="flex-grow border p-2 rounded"
+                                placeholder="Type a message..."
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                className="ml-2 bg-blue-500 text-white px-4 py-2 rounded"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <p>Select a user to start chatting.</p>
+                )}
             </div>
         </div>
     );

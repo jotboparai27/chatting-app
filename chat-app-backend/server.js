@@ -5,7 +5,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const User = require('./models/User'); // Import the User model
 const ConnectionRequest = require('./models/ConnectionRequest');
-
+const connectionRoutes = require('./routes/connections');
 
 // Load environment variables
 dotenv.config();
@@ -137,7 +137,7 @@ app.get('/', async (req, res) => {
 
         res.status(200).send(html);
     } catch (error) {
-         res.status(500).send(`
+        res.status(500).send(`
             <!DOCTYPE html>
             <html>
             <body>
@@ -149,9 +149,8 @@ app.get('/', async (req, res) => {
     }
 });
 
-
 //connection route
-const connectionRoutes = require('./routes/connections');
+
 app.use('/api/connections', connectionRoutes);
 
 // Start the server
