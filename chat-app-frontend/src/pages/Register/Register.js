@@ -32,6 +32,7 @@ const Register = () => {
 
             const { token } = response.data;
             localStorage.setItem('authToken', token);
+            localStorage.setItem('userEmail', email); // Save email
             navigate('/chat');
         } catch (error) {
             alert('Registration failed! Please try again.');
