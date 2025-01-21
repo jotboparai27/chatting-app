@@ -3,6 +3,8 @@ import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute';
 import ChatRoom from './pages/ChatRoom/ChatRoom';
+import Connections from './pages/Connections/Connections';
+
 
 const App = () => {
     return (
@@ -12,6 +14,7 @@ const App = () => {
                 <Route path="/" element={<Login />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/connections" element={<Connections />} />
                 {/* Protected route */}
                 <Route
                     path="/chat"

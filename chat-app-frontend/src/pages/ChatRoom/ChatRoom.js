@@ -1,63 +1,182 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:5001'); // Connect to the backend Socket.IO server
 
 const ChatRoom = () => {
-    const [messages, setMessages] = useState([]); // State to store messages
-    const [inputMessage, setInputMessage] = useState(''); // State for the input field
+    const [connectedUsers, setConnectedUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [message, setMessage] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [roomMembers, setRoomMembers] = useState([]);
+    const [currentRoomId, setCurrentRoomId] = useState(''); // Store current room ID
+    const navigate = useNavigate();
+    const myEmail = localStorage.getItem('userEmail'); // Logged-in user's email
 
-    // Function to handle sending messages
+    // Fetch connected users
+    useEffect(() => {
+        const fetchConnectedUsers = async () => {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await axios.get(
+                    'http://localhost:5001/api/connections/connected-users',
+                    { headers: { Authorization: `${token}` } }
+                );
+                setConnectedUsers(response.data);
+            } catch (error) {
+                console.error('Error fetching connected users:', error);
+            }
+        };
+
+        fetchConnectedUsers();
+    }, []);
+
+    // Handle selecting a user
+    const handleSelectUser = async (user) => {
+        setSelectedUser(user);
+
+        try {
+            // Request the room ID from the backend
+            const response = await axios.post('http://localhost:5001/api/rooms/get-or-create', {
+                email1: myEmail,
+                email2: user.email,
+            });
+
+            const roomId = response.data.roomId; // Room ID from backend
+            console.log(`Room ID from backend: ${roomId}`);
+            setCurrentRoomId(roomId); // Store the current room ID
+
+            // Join the room
+            socket.emit('joinRoom', roomId);
+
+            // Check room members
+            socket.emit('checkRoom', roomId);
+
+            setMessages([]); // Clear messages when switching chats
+        } catch (error) {
+            console.error('Error getting or creating room:', error);
+        }
+    };
+
+    // Listen for incoming messages and room updates
+    useEffect(() => {
+        socket.on('message', (data) => {
+            // Avoid adding the same message twice for the sender
+            if (data.room === currentRoomId && data.sender !== myEmail) {
+                setMessages((prevMessages) => [...prevMessages, data]);
+            }
+        });
+        socket.on('roomMembers', (members) => {
+            setRoomMembers(members);
+            console.log(`Room members updated:`, members);
+        });
+
+        return () => {
+            socket.off('message');
+            socket.off('roomMembers');
+        };
+    }, [currentRoomId]);
+
+    // Handle sending a message
     const handleSendMessage = () => {
-        if (inputMessage.trim() !== '') {
-            const newMessage = {
-                id: messages.length + 1,
-                text: inputMessage,
-                sender: 'You', // Hardcoded sender for now
+        if (message.trim() && selectedUser) {
+            const messageData = {
+                room: currentRoomId, // Use the stored room ID
+                text: message, // Message text
+                sender: myEmail, // Sender email
             };
-            setMessages([...messages, newMessage]); // Add new message to the messages array
-            setInputMessage(''); // Clear the input field
+
+            socket.emit('message', messageData); // Emit the message to the server
+            setMessages((prevMessages) => [...prevMessages, messageData]); // Add message locally
+            setMessage(''); // Clear input
         }
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-            <div className="w-full max-w-lg bg-white rounded-lg shadow-lg">
-                {/* Chat Header */}
-                <div className="bg-blue-600 text-white text-lg font-bold p-4 rounded-t-lg">
-                    ChatRoom
-                </div>
-
-                {/* Chat Messages */}
-                <div className="p-4 h-96 overflow-y-auto">
-                    {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`p-2 my-2 ${
-                                message.sender === 'You'
-                                    ? 'bg-blue-100 text-blue-900 self-end'
-                                    : 'bg-gray-200 text-gray-900'
-                            } rounded-md`}
+        <div className="min-h-screen flex">
+            {/* User List */}
+            <div className="w-1/3 bg-gray-100 p-4">
+                <h2 className="text-lg font-bold mb-4">Connected Users</h2>
+                <button
+                    onClick={() => navigate('/connections')}
+                    className="w-full bg-green-500 text-white py-2 rounded mb-4 hover:bg-green-600"
+                >
+                    Manage Connections
+                </button>
+                <ul>
+                    {connectedUsers.map((user) => (
+                        <li
+                            key={user._id}
+                            className={`p-2 cursor-pointer rounded ${selectedUser?._id === user._id
+                                    ? 'bg-blue-500 text-white'
+                                    : 'hover:bg-gray-200'
+                                }`}
+                            onClick={() => handleSelectUser(user)}
                         >
-                            <strong>{message.sender}: </strong>
-                            {message.text}
-                        </div>
+                            {user.email}
+                        </li>
                     ))}
-                </div>
+                </ul>
+            </div>
 
-                {/* Input Box */}
-                <div className="flex items-center p-4 border-t">
-                    <input
-                        type="text"
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        className="flex-grow px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        placeholder="Type your message..."
-                    />
-                    <button
-                        onClick={handleSendMessage}
-                        className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                        Send
-                    </button>
-                </div>
+            {/* Chat Area */}
+            <div className="w-2/3 p-4 flex flex-col">
+                {selectedUser ? (
+                    <>
+                        <h2 className="text-lg font-bold mb-4">
+                            Chatting with {selectedUser.email}
+                        </h2>
+                        <div className="flex-grow border p-4 mb-4 overflow-y-auto">
+                            {messages.map((msg, index) => (
+                                <div
+                                    key={index}
+                                    className={`mb-2 ${msg.sender === myEmail
+                                            ? 'text-right'
+                                            : 'text-left'
+                                        }`}
+                                >
+                                    <span
+                                        className={`p-2 rounded inline-block ${msg.sender === myEmail
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200'
+                                            }`}
+                                    >
+                                        {msg.text}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4">
+                            <h3 className="text-lg font-bold mb-2">Room Members</h3>
+                            <ul>
+                                {roomMembers.map((member, index) => (
+                                    <li key={index} className="text-sm text-gray-700">
+                                        {member}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="flex">
+                            <input
+                                type="text"
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                className="flex-grow border p-2 rounded"
+                                placeholder="Type a message..."
+                            />
+                            <button
+                                onClick={handleSendMessage}
+                                className="ml-2 bg-blue-500 text-white px-4 py-2 rounded"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <p>Select a user to start chatting.</p>
+                )}
             </div>
         </div>
     );

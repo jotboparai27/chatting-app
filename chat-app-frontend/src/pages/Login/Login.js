@@ -22,7 +22,9 @@ const Login = () => {
                 password,
             });
             const { token } = response.data;
-            localStorage.setItem('authToken', token);
+            console.log('Logged in successfully:', email);
+            localStorage.setItem('authToken', token); // Save token
+            localStorage.setItem('userEmail', email); // Save email
             navigate('/chat');
         } catch (error) {
             alert('Invalid email or password!');

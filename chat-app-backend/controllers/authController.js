@@ -20,8 +20,10 @@ const registerUser = async (req, res) => {
             expiresIn: '14d',
         });
 
-        res.status(201).json({ token });
+        console.log(`User registered: ${email}`);
+        res.status(201).json({ token, email });
     } catch (error) {
+        console.error('Error registering user:', error);
         res.status(500).json({ message: 'Error registering user' });
     }
 };
@@ -48,8 +50,10 @@ const loginUser = async (req, res) => {
             expiresIn: '14d',
         });
 
-        res.status(200).json({ token });
+        console.log(`User logged in: ${email}`);
+        res.status(200).json({ token, email });
     } catch (error) {
+        console.error('Error logging in user:', error);
         res.status(500).json({ message: 'Error logging in user' });
     }
 };
