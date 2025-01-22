@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5001'); // Connect to the backend Socket.IO server
+const socket = io('https://chat-app-backend-mxdt.onrender.com'); // Connect to the backend Socket.IO server
 
 const ChatRoom = () => {
     const [connectedUsers, setConnectedUsers] = useState([]);
@@ -21,7 +21,7 @@ const ChatRoom = () => {
             try {
                 const token = localStorage.getItem('authToken');
                 const response = await axios.get(
-                    'http://localhost:5001/api/connections/connected-users',
+                    'https://chat-app-backend-mxdt.onrender.com/api/connections/connected-users',
                     { headers: { Authorization: `${token}` } }
                 );
                 setConnectedUsers(response.data);
@@ -39,7 +39,7 @@ const ChatRoom = () => {
 
         try {
             // Request the room ID from the backend
-            const response = await axios.post('http://localhost:5001/api/rooms/get-or-create', {
+            const response = await axios.post('https://chat-app-backend-mxdt.onrender.com/api/rooms/get-or-create', {
                 email1: myEmail,
                 email2: user.email,
             });
