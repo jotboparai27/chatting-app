@@ -25,7 +25,7 @@ const Register = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:5001/api/auth/register', {
+            const response = await axios.post('https://chat-app-backend-mxdt.onrender.com/api/auth/register', {
                 email,
                 password,
             });

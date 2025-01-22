@@ -12,7 +12,7 @@ const Connections = () => {
         try {
             const token = localStorage.getItem('authToken'); // Replace with your token storage method
             const response = await axios.get(
-                'http://localhost:5001/api/connections/pending',
+                'https://chat-app-backend-mxdt.onrender.com/api/connections/pending',
                 { headers: { Authorization: `${token}` } }
             );
             setPendingRequests(response.data);
@@ -31,7 +31,7 @@ const Connections = () => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.post(
-                'http://localhost:5001/api/connections/request',
+                'https://chat-app-backend-mxdt.onrender.com/api/connections/request',
                 { recipientEmail },
                 { headers: { Authorization: `${token}` } }
             );
@@ -52,7 +52,7 @@ const Connections = () => {
         try {
             const token = localStorage.getItem('authToken');
             await axios.post(
-                'http://localhost:5001/api/connections/respond',
+                'https://chat-app-backend-mxdt.onrender.com/api/connections/respond',
                 { requestId, action },
                 { headers: { Authorization: `${token}` } }
             );
