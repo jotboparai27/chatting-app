@@ -35,7 +35,7 @@ const Connections = () => {
                 { recipientEmail },
                 { headers: { Authorization: `${token}` } }
             );
-
+            console.log(response.data);
             setSuccessMessage(`Request sent to ${recipientEmail}`);
             setErrorMessage('');
             setRecipientEmail(''); // Clear input
